@@ -23,28 +23,16 @@ use OverflowException, InvalidArgumentException;
  */
 class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAccess , \Serializable , \Countable
 {
-	/**
-	 * Factory to create a collection of a certain type and capacity
-	 * 
-	 * @param mixed  $type
-	 * @param int    $capacity
-	 * @return Collection
-	 */
-	public static function factory($type = null, $capacity = null)
-	{
-		$collection = new static();
-		$collection->_type = (is_null($type)
-								? null
-								: (is_string($type)
-									? $type 
-									: (is_object($type)
-										? get_class($type)
-										: gettype($type))));
-		$collection->_capacity = $capacity;
-		
-		return $collection;
-	}
+	// {{{ Constants
+	// }}} End Constants
 	
+	// {{{ Static Properties
+	// }}} End Statis Properties
+	
+	// {{{ Static Methods
+	// }}} End Static Methods
+	
+	// {{{ Properties
 	/**
 	 * The type of objects the collection is accepting
 	 * @var string
@@ -62,6 +50,30 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 	 * @var bool
 	 */
 	protected $_enforcePair;
+	// }}} End Properties
+	
+	// {{{ Methods
+	/**
+	 * Collection constructor
+	 * 
+	 * @param mixed[]   $array      The elements to initialize the collection with
+	 * @param string    $type       The type of the collection elements
+	 * @param integer   $capacity   The maximum capacity of the collection
+	 */
+	public function __construct($array = null, $type = null, $capacity = null)
+	{
+		$this->_type = (is_null($type)
+						? null
+						: (is_string($type)
+							? $type
+							: (is_object($type)
+								? get_class($type)
+								: gettype($type))));
+		$this->_capacity = $capacity;
+		
+		$array = is_null($array) ? array() : $array;
+		parent::__construct($array);
+	}
 	
 	/**
 	 * Add the specified item to the collection

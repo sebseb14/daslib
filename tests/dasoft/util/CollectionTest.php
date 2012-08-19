@@ -13,6 +13,8 @@
 
 namespace Dasoft\Util;
 
+use PHPUnit_Framework_TestCase;
+
 /**
  * @category    Dasoft
  * @package     Dasoft\Util\Collection
@@ -21,7 +23,7 @@ namespace Dasoft\Util;
  * @copyright    Copyright (c) 2010-2011 Dasoft Inc. (http://www.dasoft.ca)
  * @license      http://dtk.dasoft.ca/license
  */
-class CollectionTest extends \PHPUnit_Framework_TestCase
+class CollectionTest extends PHPUnit_Framework_TestCase
 {
 	const ITEM_STRING_1 = 'b026324c6904b2a9cb4b88d6d61c81d1';
 	const ITEM_STRING_2 = '26ab0db90d72e28ad0ba1e22ee510510';
@@ -65,6 +67,26 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
 		$coll = new Collection($arg);
 		$this->assertInstanceOf('Dasoft\Util\Collection', $coll);
 		$this->assertEquals($arg, $coll);
+	}
+	
+	/**
+	 * Test for Collection object creation with an array
+	 */
+	public function testCreationTyped()
+	{
+		$coll = new Collection(null, 'integer');
+		$coll->add(123);
+		$this->assertContains(123, $coll);
+		$coll->add('string', 123);
+		$this->assertContains(123, $coll);
+		
+		$this->setExpectedException('InvalidArgumentException');
+		$coll->add(123.456);
+		$coll->add('456');
+		$coll->add('string');
+		
+		$this->setExpectedException('InvalidArgumentException');
+		$coll = new Collection(array(123, 456, 'string'), 'string');
 	}
 	
 	/**

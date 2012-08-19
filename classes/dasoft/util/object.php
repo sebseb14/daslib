@@ -52,15 +52,17 @@ abstract class Object
 	public function __construct($properties = array(), $mode = self::MODE_STRICT)
 	{
 		$this->_object_mode = $mode;
-		$this->setProperties($properties);
+		$this->_setObjectProperties($properties);
 	}
 	
 	/**
 	 * Get the properties
 	 *
+	 * @param string|string[] $name        The of a property to get
+	 * @param boolean         $ignoreNulls Indicate whether null should be ignored or included in the result
 	 * @return array
 	 */
-	public function getProperties($name = null, $ignoreNulls = false)
+	protected function _getObjectProperties($name = null, $ignoreNulls = false)
 	{
 		if(is_null($name) || empty($name))
 		{
@@ -112,9 +114,9 @@ abstract class Object
 	/**
 	 * Set the properties
 	 *
-	 * @param array $post
+	 * @param array $properties
 	 */
-	public function setProperties(array $properties)
+	protected function _setObjectProperties(array $properties)
 	{
 		//echo get_called_class();
 		foreach ($properties as $key => $value)

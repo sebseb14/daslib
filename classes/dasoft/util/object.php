@@ -12,7 +12,7 @@
 
 namespace Dasoft\Util;
 
-use ErrorException;
+use ErrorException, ReflectionProperty;
 
 /**
  * Generic Object class
@@ -51,6 +51,7 @@ abstract class Object
 	// {{{ Methods
 	public function __construct($properties = array(), $mode = self::MODE_STRICT)
 	{
+		$properties = is_null($properties) ? array() : $properties;
 		$this->_object_mode = $mode;
 		$this->_setObjectProperties($properties);
 	}
@@ -170,10 +171,10 @@ abstract class Object
 			$this->_object_properties[$name] = $value;
 		}
 		// Or direct access
-		elseif(property_exists($this, $name))
+		/*elseif(property_exists($this, $name))
 		{
 			$this->{$name} = $value;
-		}
+		}*/
 		elseif($this->_object_mode == self::MODE_FLEXIBLE)
 		{
 			$this->_object_properties[$name] = $value;
@@ -218,10 +219,10 @@ abstract class Object
 			return $this->_object_properties[$name];
 		}
 		// Or direct access
-		elseif(property_exists($this, $name))
+		/*elseif(property_exists($this, $name))
 		{
 			return $this->{$name};
-		}
+		}*/
 		elseif($this->_object_mode == self::MODE_FLEXIBLE)
 		{
 			return null;

@@ -49,7 +49,7 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 	 * Whether to enfore key/value pair
 	 * @var bool
 	 */
-	protected $_enforcePair;
+	protected $_enforcePropName;
 	// }}} End Properties
 	
 	// {{{ Methods
@@ -60,7 +60,7 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 	 * @param string    $type       The type of the collection elements
 	 * @param integer   $capacity   The maximum capacity of the collection
 	 */
-	public function __construct($array = null, $type = null, $capacity = null)
+	public function __construct($array = null, $type = null, $capacity = null, $enforcePropName = null)
 	{
 		$this->_type = (is_null($type)
 						? null
@@ -70,9 +70,18 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 								? get_class($type)
 								: gettype($type))));
 		$this->_capacity = $capacity;
+		$this->_enforcePropName = $enforcePropName;
 		
 		$array = is_null($array) ? array() : $array;
-		parent::__construct($array);
+		if($this->_type)
+		{
+			parent::__construct();
+			$this->addAll($array);
+		}
+		else
+		{
+			parent::__construct($array);
+		}
 	}
 	
 	/**
@@ -86,7 +95,7 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 	{
 		if(is_null($item))
 		{
-			if($this->_enforcePair === true)
+			if($this->_enforcePropName === true)
 			{
 				$trace = debug_backtrace();
 				throw new \ErrorException(get_called_class() . "::add requires both index and item arguments.", 0, 0, $trace[0]['file'], $trace[0]['line']);
@@ -119,7 +128,7 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 		// Check if $items is a 0-based array
 		if($items === array_values((array) $items))
 		{
-			if($this->_enforcePair === true)
+			if($this->_enforcePropName === true)
 			{
 				$trace = debug_backtrace();
 				throw new \ErrorException(get_called_class() . "::addAll requires items to be indexed.", 0, 0, $trace[0]['file'], $trace[0]['line']);
@@ -320,7 +329,7 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 		{
 			throw new OverflowException("Attempting to access an item beyond the capacity of the collection: {$this->_capacity}");
 		}
-		
+		echo "$index:$item\n";
 		parent::offsetSet($index, $item);
 	}
 	

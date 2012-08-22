@@ -3,25 +3,19 @@
  * Dasoft Toolkit
  * 
  * @category    Dasoft
- * @package     Dasoft\Util\Collection
- * @subpackage  UnitTests
+ * @package     UnitTests
  * @author      Daniel Arsenault <daniel.arsenault@dasoft.ca>
- * @copyright   Copyright (c) 2010-2011 Dasoft Inc. (http://www.dasoft.ca)
- * @license     http://dtk.dasoft.ca/license
- * @version     $Id: CollectionTest.php 5 2011-07-09 17:50:09Z darsenault $
+ * @copyright   Copyright (c) 2010-2012 Daniel Arsenault
+ * @license     BSD License
+ * @version     $Id$-expansion
  */
 
-namespace Dasoft\Util;
-
-use PHPUnit_Framework_TestCase;
+use Dasoft\Util\Collection;
 
 /**
  * @category    Dasoft
- * @package     Dasoft\Util\Collection
- * @subpackage  UnitTests
+ * @package     UnitTests
  * @author      Daniel Arsenault <daniel.arsenault@dasoft.ca>
- * @copyright    Copyright (c) 2010-2011 Dasoft Inc. (http://www.dasoft.ca)
- * @license      http://dtk.dasoft.ca/license
  */
 class CollectionTest extends PHPUnit_Framework_TestCase
 {
@@ -69,64 +63,151 @@ class CollectionTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals($arg, $coll);
 	}
 	
+	public function providerTestTyped()
+	{
+		return array(
+			array(null, 'integer', null, 123),
+			array(null, 'integer', 'arg', 987),
+		);
+	}
+	
 	/**
 	 * Test for Collection object creation with an array
+	 * 
+	 * @dataProvider providerTestTyped
 	 */
-	public function testCreationTyped()
+	public function testTyped($array, $type, $key, $value)
 	{
-		$coll = new Collection(null, 'integer');
-		$coll->add(123);
-		$this->assertContains(123, $coll);
-		$coll->add('string', 123);
-		$this->assertContains(123, $coll);
-		
-		$this->setExpectedException('InvalidArgumentException');
-		$coll->add(123.456);
-		$coll->add('456');
-		$coll->add('string');
-		
-		$this->setExpectedException('InvalidArgumentException');
-		$coll = new Collection(array(123, 456, 'string'), 'string');
+		$coll = new Collection($array, $type);
+		if($key)
+		{
+			$coll->add($key, $value);
+		}
+		else
+		{
+			$coll->add($value);
+		}
+		$this->assertContains($value, $coll);
+		if($key)
+		{
+			$this->assertEquals($value, $coll[$key]);
+		}
+	}
+	
+	public function providerTestCreationTypedException()
+	{
+		return array(
+			array(null, 'integer', 123.456, 'InvalidArgumentException'),
+			array(null, 'integer', '456', 'InvalidArgumentException'),
+			array(null, 'integer', 'string', 'InvalidArgumentException'),
+			array(array(123, 456, 'string'), 'integer', null, 'InvalidArgumentException'),
+			array(array(123, 456, 'string'), new \Date(), 'string', 'InvalidArgumentException'),
+		);
+	}
+	
+	/**
+	 * Test for Collection object creation with an array
+	 * 
+	 * @dataProvider providerTestCreationTypedException
+	 */
+	public function testCreationTypedException($array, $type, $value, $exception)
+	{
+		$this->setExpectedException($exception);
+		$coll = new Collection($array, $type);
+		$coll->add($value);
+	}
+	
+	public function providerTestAdd()
+	{
+		return array(
+			array(null, self::ITEM_STRING_1),
+			array('arg', self::ITEM_STRING_2),
+		);
 	}
 	
 	/**
 	 * Test for Add
+	 * 
+	 * @dataProvider providerTestAdd
 	 */
-	public function testAdd()
+	public function testAdd($key, $value)
 	{
 		$coll = new Collection();
+		if($key)
+		{
+			$coll->add($key, $value);
+		}
+		else
+		{
+			$coll->add($value);
+		}
+		$this->assertContains($value, $coll);
+		if($key)
+		{
+			$this->assertEquals($value, $coll[$key]);
+		}
+	}
+	
+	public function testAddException()
+	{
+		$coll = new Collection(null, null, null, true);
 		
-		$arg = self::ITEM_STRING_1;
-		$coll->add($arg);
-		$this->assertContains($arg, $coll);
+		$this->setExpectedException('ErrorException', 'requires both index and item arguments');
+		$coll->add(123);
+	}
+	
+	public function providerTestAddAll()
+	{
+		return array(
+			array(
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3),
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3)
+			),
+			array(
+				new Collection(array(self::ITEM_STRING_2, self::ITEM_STRING_3)),
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3)
+			),
+		);
 	}
 	
 	/**
 	 * Test for addAll with a Collection
+	 * 
+	 * @dataProvider providerTestAddAll
 	 */
-	public function testAddAllCollection()
+	public function testAddAll($items, $expected)
 	{
 		$coll = new Collection();
-		
-		$c = new Collection(array(self::ITEM_STRING_2, self::ITEM_STRING_3));
 		// Add Collection
-		$coll->addAll($c);
-		$this->assertContains(self::ITEM_STRING_2, $coll);
-		$this->assertContains(self::ITEM_STRING_3, $coll);
+		$coll->addAll($items);
+		foreach($expected as $item)
+		{
+			$this->assertContains($item, $coll);
+			$this->assertContains($item, $coll);
+		}
+	}
+	
+	public function providerTestAddAllException()
+	{
+		return array(
+			array(null, null, null, null, 'addAll', new \Date(), 'ErrorException', 'must implement Traversable or be an array'),
+			array(null, null, null, true, 'addAll', array('onlyvalue'), 'ErrorException', 'requires items to be indexed'),
+			array(null, null, 3, null, 'addAll', array('1','2','3','4'), 'OverflowException', 'Attempting to access an item beyond the capacity of the collection'),
+			array(null, null, null, null, 'retainAll', new \Date(), 'ErrorException', 'must implement Traversable or be an array'),
+		);
 	}
 	
 	/**
-	 * Test for addAll with an array
+	 * Test for addAll exception
+	 * 
+	 * @dataProvider providerTestAddAllException
 	 */
-	public function testAddAllArray()
+	public function testMethodAllException($array, $type, $capacity, $enforcePropName, $method, $arg, $exception, $message)
 	{
-		$coll = new Collection();
+		$coll = new Collection($array, $type, $capacity, $enforcePropName);
 		
-		$a = array(self::ITEM_STRING_4, self::ITEM_STRING_5);
-		// Add Array
-		$coll->addAll($a);
-		$this->assertContains(self::ITEM_STRING_4, $coll);
-		$this->assertContains(self::ITEM_STRING_5, $coll);
+		$this->setExpectedException($exception, $message);
+		$coll->{$method}($arg);
 	}
 	
 	/**
@@ -152,28 +233,48 @@ class CollectionTest extends PHPUnit_Framework_TestCase
 		$this->assertFalse($coll->containsAll(new Collection(array(self::NON_ITEM_STRING_2,self::ITEM_STRING_3))));
 	}
 	
+	public function providerTestEquals()
+	{
+		return array(
+			array(
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3),
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3),
+				'one','one',
+				true, true
+			),
+			array(
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3),
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3),
+				'one','two',
+				true, false
+			),
+			array(
+				array(self::ITEM_STRING_1, self::ITEM_STRING_2),
+				array(self::ITEM_STRING_2, self::ITEM_STRING_3),
+				'one','one',
+				false, false
+			),
+		);
+	}
+	
 	/**
 	 * Test for equals
+	 * 
+	 * @dataProvider providerTestEquals
 	 */
-	public function testEquals()
+	public function testEquals($array1, $array2, $prop1, $prop2, $expected1, $expected2)
 	{
-		$coll = new Collection(array(self::ITEM_STRING_2, self::ITEM_STRING_3));
+		$coll1 = new Collection($array1);
+		$coll2 = new Collection($array2);
+		$this->assertEquals($expected1, $coll1->equals($coll2));
 		
-		$c = new Collection(array(self::ITEM_STRING_2, self::ITEM_STRING_3));
-		$this->assertTrue($coll->equals($c));
+		$coll1->prop = $prop1;
+		$coll2->prop = $prop2;
+		$this->assertEquals($expected2, $coll1->equals($coll2));
 		
-		$c->prop = true;
-		$this->assertFalse($coll->equals($c));
-		
-		$coll->prop = false;
-		$this->assertFalse($coll->equals($c));
-		
-		$coll->prop = true;
-		$this->assertTrue($coll->equals($c));
-		
-		$this->assertFalse($coll->equals((array)$coll));
-		$this->assertFalse($coll->equals(new Collection()));
-		$this->assertFalse($coll->equals(array()));
+		$this->assertFalse($coll1->equals((array)$coll1));
+		$this->assertFalse($coll1->equals(new Collection()));
+		$this->assertFalse($coll1->equals(array()));
 	}
 	
 	/**
@@ -188,29 +289,66 @@ class CollectionTest extends PHPUnit_Framework_TestCase
 		$this->assertFalse($coll->isEmpty());
 	}
 	
+	public function providerTestRemoveAt()
+	{
+		return array(
+			array(
+				array(self::ITEM_STRING_1, self::ITEM_STRING_2, self::ITEM_STRING_3, self::ITEM_STRING_4),
+				2, self::ITEM_STRING_3
+			),
+			array(
+				array('arg0' => self::ITEM_STRING_1, 'arg1' => self::ITEM_STRING_2, 'arg2' => self::ITEM_STRING_3, 'arg3' => self::ITEM_STRING_4),
+				'arg2', self::ITEM_STRING_3
+			),
+		);
+	}
+	
 	/**
 	 * Test for removeAt
+	 * 
+	 * @dataProvider providerTestRemoveAt
 	 */
-	public function testRemoveAt()
+	public function testRemoveAt($array, $index, $value)
 	{
-		$coll = new Collection(array(self::ITEM_STRING_1, self::ITEM_STRING_2, self::ITEM_STRING_3, self::ITEM_STRING_4));
-		
-		$c = clone $coll;
-		$c->removeAt(2);
-		$this->assertNotContains($coll[2], $c); // Index 2 no longer present
-		$this->assertSame($c[2], $coll[3]); // Index 3 is now index 2 
+		$c = new Collection($array);
+		$c->removeAt($index);
+		$this->assertNotContains($value, $c);
+		if(is_string($index))
+		{
+			$this->assertArrayNotHasKey($index, $c->getArrayCopy());
+		}
+		elseif(is_int($index))
+		{
+			$this->assertSame($c[$index], $array[$index+1]);
+		}
+	}
+	
+	public function providerTestRemove()
+	{
+		return array(
+			array(
+				array(self::ITEM_STRING_1, self::ITEM_STRING_2, self::ITEM_STRING_3, self::ITEM_STRING_4),
+				self::ITEM_STRING_3
+			),
+			array(
+				array('arg0' => self::ITEM_STRING_1, 'arg1' => self::ITEM_STRING_2, 'arg2' => self::ITEM_STRING_3, 'arg3' => self::ITEM_STRING_4),
+				self::ITEM_STRING_3
+			),
+		);
 	}
 	
 	/**
 	 * Test for remove
+	 * 
+	 * @dataProvider providerTestRemove
 	 */
-	public function testRemove()
+	public function testRemove($array, $value)
 	{
-		$coll = new Collection(array(self::ITEM_STRING_2, self::ITEM_STRING_3));
+		$coll = new Collection($array);
 		
-		$arg = self::ITEM_STRING_2;
-		$coll->remove($arg);
-		$this->assertNotContains($arg, $coll);
+		$coll->remove($value);
+		$this->assertNotContains($value, $coll);
+		$this->assertFalse($coll->remove(self::NON_ITEM_STRING_1));
 	}
 	
 	/**
@@ -251,5 +389,16 @@ class CollectionTest extends PHPUnit_Framework_TestCase
 		
 		$coll->retainAll($c);
 		$this->assertEquals(new Collection(array_intersect($coll->getArrayCopy(), $c->getArrayCopy())), $coll);
+	}
+	
+	/**
+	 * Test conversion methods
+	 */
+	public function testConversion()
+	{
+		$array = array('two', 'three');
+		$coll = new Collection($array);
+		$this->assertEquals($array, $coll->toArray());
+		$this->assertEquals('two three', $coll->toString());
 	}
 }

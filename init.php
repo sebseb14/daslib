@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Dasoft;
 
 define('DAKOLIB_PATH', realpath(dirname(__FILE__)) . DIRECTORY_SEPARATOR);

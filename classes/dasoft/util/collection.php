@@ -329,7 +329,7 @@ class Collection extends \ArrayObject //implements \IteratorAggregate , \ArrayAc
 		{
 			throw new OverflowException("Attempting to access an item beyond the capacity of the collection: {$this->_capacity}");
 		}
-		echo "$index:$item\n";
+		
 		parent::offsetSet($index, $item);
 	}
 	

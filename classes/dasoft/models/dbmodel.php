@@ -1,6 +1,6 @@
 <?php
 /**
- *  Dasoft Toolkit
+ * Dasoft Toolkit
  *  
  * @category	Dasoft
  * @package		Dasoft\Models
@@ -10,7 +10,7 @@
 
 namespace Dasoft\Models;
 
-use DB, Validation_Exception, Database_Exception;
+use Arr, DB, InvalidArgumentException, Validation_Exception, Database_Exception;
 
 /**
  * DbModel
@@ -120,9 +120,30 @@ abstract class DbModel extends BaseModel
 		}
 	}
 	
-	public function fetch()
+	public function fetch($validation = null, $strict = false)
 	{
-		$result = DB::select()->from($this->_tblName)->where($this->_pkName, '=', $this->{$this->_pkName})->execute();
+		/*
+		 * We do lazy fetching, to force refetch, call invalidate()
+		 */ 
+		if($this->_fetchHash){ return true; }
+		
+		if(is_null($validation)){ $validation = __FUNCTION__; }
+		if(is_string($validation)){ $validation = Arr::get($this->_validationRules, $validation, null); }
+		if(!$validation){ throw new InvalidArgumentException("Invalid validation", null, null); }
+		if(!$this->validate($validation))
+		{
+			throw new Validation_Exception($this->_validation, 'Failed to validate ' . json_encode($this->errors));
+		}
+		
+		$query = DB::select()->from($this->_tblName)->as_assoc();
+		
+		$properties = ($strict ? $this->getProperties(null, true) : $this->getProperties(array_keys($validation), true));
+		foreach ($properties as $k => $v)
+		{
+			$query->and_where($k, '=', $v);
+		}
+		
+		$result = $query->execute();
 		
 		if($result->count())
 		{
@@ -134,7 +155,7 @@ abstract class DbModel extends BaseModel
 		return (bool)$result->count();
 	}
 	
-	public function save()
+	public function save($fields = null, $exclude = false)
 	{
 		try
 		{
@@ -144,7 +165,7 @@ abstract class DbModel extends BaseModel
 		{
 			if($e->getCode() == '23000') // @fixme MySQL Specific
 			{
-				return $this->update();
+				return $this->update($fields = null, $exclude = false);
 			}
 		}
 	}

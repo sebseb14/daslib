@@ -181,6 +181,8 @@ abstract class DbModel extends BaseModel
 		
 		$result = DB::insert($this->_tblName, array_keys($properties))->values($properties)->execute();
 		
+		$this->id = @$result[0]?:null;
+		
 		return (bool)$result[1];
 	}
 	

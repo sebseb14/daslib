@@ -10,7 +10,7 @@
  * @version		$Id$
  */
 
-namespace Dasoft\Net;
+namespace Dasoft\Net\Http;
 
 /**
  * Status Codes

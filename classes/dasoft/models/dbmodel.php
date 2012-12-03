@@ -10,7 +10,7 @@
 
 namespace Dasoft\Models;
 
-use Arr, DB, InvalidArgumentException, Validation_Exception, Database_Exception;
+use Arr, DB, ErrorException, InvalidArgumentException, Validation_Exception, Database_Exception;
 
 /**
  * DbModel
@@ -80,6 +80,29 @@ abstract class DbModel extends BaseModel
 		}
 		
 		return $modelList;
+	}
+	
+	public static function updateList($filter = array(), $properties = array(), $safe = true)
+	{
+		// If safe update, require $filter
+		if(empty($filter) && $safe)
+		{
+			$trace = debug_backtrace();
+			throw new ErrorException("Safe Update: Missing valid argument 1 in  ".__METHOD__, 1, 0, $trace[0]['file'] , $trace[0]['line']);
+		}
+		
+		$instance = new static();
+		
+		$query = DB::update($instance->_tblName);
+		$query->set($properties);
+		foreach ($filter as $k => $v)
+		{
+			$query->and_where($k, '=', $v);
+		}
+		
+		$result = $query->execute();
+		
+		return $result;
 	}
 	// }}} End Static Methods
 	/**@#-*/
@@ -172,7 +195,7 @@ abstract class DbModel extends BaseModel
 	
 	public function insert()
 	{
-		if(isset($this->_validationRules['insert']) && !$this->validate('insert'))
+		if(isset($this->_validationRules['insert']) && !$this->validate(__FUNCTION__))
 		{
 			throw new Validation_Exception($this->_validation, 'Failed to validate ' . json_encode($this->errors));
 		}
@@ -191,9 +214,51 @@ abstract class DbModel extends BaseModel
 		if($exclude){ $fields = array_diff(array_keys($this->getProperties()), $fields); }
 		$properties = $this->getProperties($fields);
 		
+		if(isset($this->_validationRules[__FUNCTION__]))
+		{
+			// We only validate the fields that are being updated
+			$rules = array();
+			foreach (array_keys($properties) as $prop)
+			{
+				$rules[$prop] = Arr::get($this->_validationRules[__FUNCTION__], $prop, array());
+			}
+			
+			if(!$this->validate($rules))
+			{
+				throw new Validation_Exception($this->_validation, 'Failed to validate ' . json_encode($this->errors));
+			}
+		}
+		
 		$result = DB::update($this->_tblName)->set($properties)->where($this->_pkName,'=',$this->{$this->_pkName})->execute();
 		
 		return is_int($result);
+	}
+	
+	public function delete($validation = null, $strict = false)
+	{
+		// [Validation]
+		if(is_null($validation)){ $validation = __FUNCTION__; }
+		if(is_string($validation)){ $validation = Arr::get($this->_validationRules, $validation, null); }
+		if(!$validation){ throw new InvalidArgumentException("Invalid validation", null, null); }
+		if(!$this->validate($validation))
+		{
+			throw new Validation_Exception($this->_validation, 'Failed to validate ' . json_encode($this->errors));
+		}
+		// [/Validation]
+		
+		$query = DB::delete($this->_tblName);
+		
+		$properties = ($strict ? $this->getProperties(null, true) : $this->getProperties(array_keys($validation), false));
+		// We're working on an existing object, so we force at least a where clause on the primary key 
+		if(!key_exists($this->_pkName, $properties)){ $query->where($this->_pkName,'=',$this->{$this->_pkName}); }
+		foreach ($properties as $k => $v)
+		{
+			$query->and_where($k, '=', $v);
+		}
+		
+		$result = $query->execute();
+		
+		return (bool)$result;
 	}
 	// }}} End Methods
 	

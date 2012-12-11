@@ -190,6 +190,8 @@ abstract class DbModel extends BaseModel
 			{
 				return $this->update($fields = null, $exclude = false);
 			}
+			
+			throw $e;
 		}
 	}
 	

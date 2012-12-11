@@ -34,7 +34,11 @@ class JsonCollection extends Collection
 	// }}} End Properties
 	
 	// {{{ Methods
-	
+	public function __construct($array = null, $type = null, $capacity = null, $enforcePropName = null)
+	{
+		if(is_string($array)) { $array = json_decode($array, true); }
+		parent::__construct($array, $type, $capacity, $enforcePropName);
+	}
 	public function __toString()
 	{
 		return json_encode((array)$this);

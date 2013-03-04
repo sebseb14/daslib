@@ -19,6 +19,8 @@ use InvalidArgumentException, Validation_Exception;
  * @category    Dasoft
  * @package     Dasoft\Models
  * @author      Daniel Arsenault <daniel.arsenault@dasoft.ca>
+ * 
+ * @property    String    id
  */
 abstract class MongoModel extends BaseModel
 {
@@ -360,6 +362,16 @@ abstract class MongoModel extends BaseModel
 		}
 		
 		return $value;
+	}
+	
+	protected function &__get_id()
+	{
+		return $this->_id;
+	}
+	
+	protected function __set_id($value)
+	{
+		$this->_id = $value;
 	}
 	
 	protected function &__get__id()
